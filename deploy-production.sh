@@ -44,6 +44,15 @@ else
     exit 1
 fi
 
+# 3.5 Create Storage Link
+echo -e "\n${YELLOW}[3.5] Creating Storage Link...${NC}"
+php artisan storage:link
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Storage link created${NC}"
+else
+    echo -e "${YELLOW}⚠ Storage link may already exist${NC}"
+fi
+
 # 4. Seed Database (optional)
 echo -e "\n${YELLOW}[4] Seeding Database (Optional)...${NC}"
 read -p "Run database seeder? (y/n) " -n 1 -r

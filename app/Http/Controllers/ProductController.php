@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -29,22 +30,17 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'price' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $data = $request->all();
 
-        // Simpan file ke public/images directory
+        // Simpan file ke storage/app/public/products
         if ($request->hasFile('image')) {
-            $imagesPath = public_path('images');
-            if (!\Illuminate\Support\Facades\File::exists($imagesPath)) {
-                \Illuminate\Support\Facades\File::makeDirectory($imagesPath, 0755, true);
-            }
-            
             $file = $request->file('image');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move($imagesPath, $filename);
-            $data['image'] = $filename;
+            $path = Storage::disk('public')->putFileAs('products', $file, $filename);
+            $data['image'] = $path;
         }
 
         \App\Models\Product::create($data);
@@ -74,7 +70,7 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'price' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'description' => 'required',
         ]);
 
@@ -83,23 +79,15 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             // Hapus foto lama jika ada
-            if ($product->image) {
-                $oldImagePath = public_path('images/' . $product->image);
-                if (\Illuminate\Support\Facades\File::exists($oldImagePath)) {
-                    \Illuminate\Support\Facades\File::delete($oldImagePath);
-                }
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
             }
 
-            // Simpan foto baru ke public/images directory
-            $imagesPath = public_path('images');
-            if (!\Illuminate\Support\Facades\File::exists($imagesPath)) {
-                \Illuminate\Support\Facades\File::makeDirectory($imagesPath, 0755, true);
-            }
-            
+            // Simpan foto baru ke storage
             $file = $request->file('image');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move($imagesPath, $filename);
-            $data['image'] = $filename;
+            $path = Storage::disk('public')->putFileAs('products', $file, $filename);
+            $data['image'] = $path;
         }
 
         $product->update($data);
@@ -115,10 +103,14 @@ class ProductController extends Controller
         // 1. Cari datanya
         $product = \App\Models\Product::findOrFail($id);
 
-        // 2. Hapus datanya
+        // 2. Hapus gambarnya jika ada
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
+        // 3. Hapus datanya
         $product->delete();
 
-        // 3. PENTING: Harus ada baris ini agar tidak layar putih
         return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus!');
     }
 }

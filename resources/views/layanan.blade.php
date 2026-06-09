@@ -22,7 +22,7 @@
             <div class="card h-100 shadow-sm border rounded-4 overflow-hidden" style="transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0.125rem 0.25rem rgba(0,0,0,0.075)';">
                 <div class="position-relative">
                     @if($p->image)
-                        <img src="{{ asset('images/' . rawurlencode($p->image)) }}" class="card-img-top" alt="{{ $p->name }}" style="height: 220px; object-fit: cover;">
+                        <img src="{{ asset('storage/' . $p->image) }}" class="card-img-top" alt="{{ $p->name }}" style="height: 220px; object-fit: cover;">
                     @else
                         <img src="{{ asset('images/logo_sky.png') }}" class="card-img-top" alt="{{ $p->name }}" style="height: 220px; object-fit: cover;">
                     @endif
