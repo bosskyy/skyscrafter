@@ -7,7 +7,13 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\ImageController;
 use Illuminate\Support\Facades\Route;
+
+// ==========================================
+// 0. IMAGE FALLBACK (Jika symlink tidak ada)
+// ==========================================
+Route::get('/api/images/{path}', [ImageController::class, 'serve'])->name('images.serve');
 
 // ==========================================
 // 1. HALAMAN PUBLIK (TANPA LOGIN)
