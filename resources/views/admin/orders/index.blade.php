@@ -76,6 +76,18 @@
                                                 </div>
                                             @endif
 
+                                            @if(!empty($o->options['keychain_template']))
+                                                <div class="mt-2 bg-light p-2 rounded small">
+                                                    <span class="d-block fw-semibold mb-1"><i class="bi bi-palette"></i> Template Gantungan Kunci:</span>
+                                                    <a href="javascript:void(0)" onclick="showPreview('{{ asset('templates/keychain/' . $o->options['keychain_template']) }}')">
+                                                        <img src="{{ asset('templates/keychain/' . $o->options['keychain_template']) }}" class="rounded shadow-sm border turn-cursor" style="height: 60px; object-fit: contain;">
+                                                    </a>
+                                                    <a href="{{ asset('templates/keychain/' . $o->options['keychain_template']) }}" download="Template_{{ $o->options['keychain_template'] }}" class="btn btn-sm btn-outline-primary py-0 px-2 mt-1 d-block" style="width: fit-content; font-size: 0.70rem;">
+                                                        <i class="bi bi-download"></i> Unduh Template
+                                                    </a>
+                                                </div>
+                                            @endif
+
                                             @if(!empty($o->options['uploaded_photos']))
                                                 <div class="mt-2 d-flex flex-wrap gap-2">
                                                     @foreach($o->options['uploaded_photos'] as $idx => $photoPath)
@@ -145,6 +157,14 @@
                                         <a href="{{ $paymentUrl }}" download="Bukti_Bayar_{{ $firstOrder->customer_name }}_{{ substr($checkoutId, 0, 5) }}.png" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.70rem;">
                                             <i class="bi bi-download"></i> Unduh
                                         </a>
+                                        <form action="{{ route('orders.togglePaymentValidation', $firstOrder->id) }}" method="POST" class="mt-2 w-100">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-sm {{ $firstOrder->payment_validated ? 'btn-success' : 'btn-outline-success' }} rounded-pill w-100 py-0" style="font-size: 0.70rem;">
+                                                <i class="bi {{ $firstOrder->payment_validated ? 'bi-check-circle-fill' : 'bi-circle' }}"></i>
+                                                {{ $firstOrder->payment_validated ? 'Valid' : 'Validasi' }}
+                                            </button>
+                                        </form>
                                     </div>
                                 @else
                                     <span class="text-muted small fst-italic">Belum Upload</span>

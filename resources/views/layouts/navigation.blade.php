@@ -15,6 +15,17 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @auth
+                        <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
+                            <i class="bi bi-box"></i> Pesanan
+                        </x-nav-link>
+                        <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
+                            <i class="bi bi-bag"></i> Produk
+                        </x-nav-link>
+                        <x-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
+                            <i class="bi bi-image"></i> Template
+                        </x-nav-link>
+                    @endauth
                 </div>
             </div>
 
@@ -70,6 +81,17 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            @auth
+                <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
+                    <i class="bi bi-box"></i> Pesanan
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
+                    <i class="bi bi-bag"></i> Produk
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
+                    <i class="bi bi-image"></i> Template
+                </x-responsive-nav-link>
+            @endauth
         </div>
 
         <!-- Responsive Settings Options -->

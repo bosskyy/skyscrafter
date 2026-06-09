@@ -52,6 +52,16 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
 
+    // Toggle validasi bukti pembayaran
+    public function togglePaymentValidation($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->update(['payment_validated' => !$order->payment_validated]);
+
+        $message = $order->payment_validated ? 'Bukti pembayaran telah divalidasi!' : 'Validasi bukti pembayaran dibatalkan!';
+        return redirect()->back()->with('success', $message);
+    }
+
     // Menampilkan Pesanan Masuk (Hanya yang statusnya BUKAN Selesai / Pending)
     public function index(Request $request)
     {

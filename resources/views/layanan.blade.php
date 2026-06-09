@@ -220,6 +220,60 @@
                                             @endfor
                                         </div>
                                     </div>
+                                @elseif($p->name === 'Gantungan Kunci Photostrip')
+                                    <div class="alert alert-success py-3 small">
+                                        <strong><i class="bi bi-info-circle"></i> Petunjuk Gantungan Kunci Photostrip:</strong>
+                                        <ul class="mb-2 mt-2 ps-3">
+                                            <li><strong>Satu Sisi (3 Foto):</strong> Upload 3 foto. Kedua sisi gantungan kunci akan menampilkan foto-foto yang sama (mirrored).</li>
+                                            <li><strong>Dua Sisi (6 Foto):</strong> Upload 6 foto. Sisi 1 menggunakan foto 1-3, sisi 2 menggunakan foto 4-6 (foto berbeda di setiap sisinya).</li>
+                                        </ul>
+                                        <strong>Tips:</strong> Gunakan template dan foto yang sama dengan produk Photostrip untuk konsistensi desain.
+                                    </div>
+                                    <label class="form-label fw-bold">Pilih Template Gantungan Kunci Photostrip</label>
+                                    <div class="row g-2 mb-3 overflow-auto custom-scroll" style="max-height: 250px;">
+                                        @foreach($keychain_templates ?? [] as $idx => $template)
+                                            <div class="col-4 col-md-3">
+                                                <label class="d-block w-100 turn-cursor">
+                                                    <input type="radio" name="keychain_template" value="{{ basename($template) }}" class="d-none template-radio" required>
+                                                    <div class="border rounded p-1 text-center template-card">
+                                                        <img src="{{ asset($template) }}" class="img-fluid rounded border mb-1" style="height: 100px; object-fit: contain;">
+                                                        <div class="small fw-semibold text-truncate">{{ basename($template, '.png') }}</div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Pilih Tipe Gantungan Kunci</label>
+                                        <select name="keychain_type" class="form-control" onchange="toggleKeychainPhotos(this, {{ $p->id }})" required>
+                                            <option value="">-- Pilih Tipe --</option>
+                                            <option value="3">Satu Sisi (3 Foto) - Kedua sisinya foto yang sama</option>
+                                            <option value="6">Dua Sisi (6 Foto) - Masing-masing sisi berbeda foto</option>
+                                        </select>
+                                    </div>
+
+                                    <label class="form-label fw-bold">Upload Foto Gantungan Kunci Photostrip</label>
+                                    <div id="keychain-upload-{{ $p->id }}" style="display: none;">
+                                        <div id="alert-keychain-{{ $p->id }}" class="alert alert-info py-2 small mb-3">
+                                            <i class="bi bi-exclamation-circle"></i> Silakan pilih tipe gantungan kunci terlebih dahulu.
+                                        </div>
+                                        <div id="keychain-files-container-{{ $p->id }}" class="row g-2 mb-3">
+                                            @for($i = 1; $i <= 6; $i++)
+                                                <div class="col-4 keychain-file-col keychain-col-{{ $p->id }}" style="display: none;">
+                                                    <label class="d-block text-center border rounded p-2" style="cursor: pointer; border-style: dashed !important; background-color: #f8f9fa;">
+                                                        <div id="preview-keychain-{{ $p->id }}-{{ $i }}" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                                                            <div class="text-muted small">
+                                                                <i class="bi bi-camera d-block fs-4"></i>
+                                                                Foto {{ $i }}
+                                                            </div>
+                                                        </div>
+                                                        <input type="file" name="keychain_files[]" class="d-none keychain-file-input" accept="image/*" onchange="previewImage(this, 'preview-keychain-{{ $p->id }}-{{ $i }}')" required>
+                                                    </label>
+                                                </div>
+                                            @endfor
+                                        </div>
+                                    </div>
                                 @else
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Upload File / Foto yang Ingin Dicetak</label>
@@ -298,6 +352,46 @@
         }
     }
 
+    function toggleKeychainPhotos(selectElem, id) {
+        const val = selectElem.value;
+        const keychainUpload = document.getElementById('keychain-upload-' + id);
+        const alertKeychain = document.getElementById('alert-keychain-' + id);
+        const keychainContainer = document.getElementById('keychain-files-container-' + id);
+        
+        if (val === '3') {
+            keychainUpload.style.display = 'block';
+            alertKeychain.innerHTML = '<i class="bi bi-info-circle"></i> Upload 3 foto untuk satu sisi. Kedua sisi gantungan kunci akan menampilkan foto yang sama.';
+            
+            // Show only 3 input boxes
+            const cols = keychainContainer.querySelectorAll('.keychain-col-' + id);
+            cols.forEach((col, index) => {
+                col.style.display = index < 3 ? 'block' : 'none';
+                const input = col.querySelector('.keychain-file-input');
+                input.required = true;
+            });
+        } else if (val === '6') {
+            keychainUpload.style.display = 'block';
+            alertKeychain.innerHTML = '<i class="bi bi-info-circle"></i> Upload 6 foto. Foto 1-3 untuk sisi 1, foto 4-6 untuk sisi 2 (foto berbeda di setiap sisinya).';
+            
+            // Show all 6 input boxes
+            const cols = keychainContainer.querySelectorAll('.keychain-col-' + id);
+            cols.forEach((col, index) => {
+                col.style.display = 'block';
+                const input = col.querySelector('.keychain-file-input');
+                input.required = true;
+            });
+        } else {
+            keychainUpload.style.display = 'none';
+            
+            const cols = keychainContainer.querySelectorAll('.keychain-col-' + id);
+            cols.forEach(col => {
+                col.style.display = 'none';
+                const input = col.querySelector('.keychain-file-input');
+                input.required = false;
+            });
+        }
+    }
+
     let currentReplacerAction = null;
     const globalReplacerInput = document.createElement('input');
     globalReplacerInput.type = 'file';
@@ -349,6 +443,53 @@
             link.click();
         }
     };
+
+    function toggleKeychainPhotos(selectElem, id) {
+        const val = selectElem.value;
+        const uploadSection = document.getElementById('keychain-upload-' + id);
+        const alertBox = document.getElementById('alert-keychain-' + id);
+        const container = document.getElementById('keychain-files-container-' + id);
+        
+        if (val === '3' || val === '6') {
+            uploadSection.style.display = 'block';
+            const numPhotos = parseInt(val);
+            
+            // Update alert text
+            if (numPhotos === 3) {
+                alertBox.innerHTML = '<strong>Satu Sisi (3 Foto):</strong> Upload 3 foto yang sama untuk kedua sisi gantungan kunci.';
+            } else {
+                alertBox.innerHTML = '<strong>Dua Sisi (6 Foto):</strong> Upload 6 foto berbeda (3 untuk sisi depan, 3 untuk sisi belakang).';
+            }
+            
+            // Show/hide columns based on selection
+            const allCols = container.querySelectorAll('.keychain-file-col');
+            allCols.forEach((col, index) => {
+                if (index < numPhotos) {
+                    col.style.display = 'block';
+                    const input = col.querySelector('.keychain-file-input');
+                    input.required = true;
+                } else {
+                    col.style.display = 'none';
+                    const input = col.querySelector('.keychain-file-input');
+                    input.required = false;
+                    // Clear file
+                    input.value = '';
+                    const previewId = col.querySelector('[id^="preview-keychain"]').id;
+                    document.getElementById(previewId).innerHTML = `<div class="text-muted small"><i class="bi bi-camera d-block fs-4"></i>Foto</div>`;
+                }
+            });
+        } else {
+            uploadSection.style.display = 'none';
+            alertBox.innerHTML = 'Silakan pilih tipe gantungan kunci terlebih dahulu.';
+            
+            // Reset all inputs
+            const allInputs = container.querySelectorAll('.keychain-file-input');
+            allInputs.forEach(input => {
+                input.required = false;
+                input.value = '';
+            });
+        }
+    }
 
     function previewImage(input, previewContainerId) {
         const container = document.getElementById(previewContainerId);

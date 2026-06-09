@@ -75,6 +75,13 @@ class CartController extends Controller
                 'photostrip_files.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
                 'photostrip_template' => ['nullable', 'string']
             ];
+        } elseif ($product->name === 'Gantungan Kunci Photostrip') {
+            $rules = [
+                'keychain_files' => ['required', 'array', 'min:3', 'max:6'],
+                'keychain_files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+                'keychain_template' => ['required', 'string'],
+                'keychain_type' => ['required', 'in:3,6']
+            ];
         } else {
             $rules = [
                 'document_file' => ['required', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:10240'],
@@ -99,6 +106,12 @@ class CartController extends Controller
         if (isset($validated['photostrip_template']) && $validated['variant'] === 'Photostrip') {
             $options['photostrip_template'] = $validated['photostrip_template'];
         }
+        if (isset($validated['keychain_template'])) {
+            $options['keychain_template'] = $validated['keychain_template'];
+        }
+        if (isset($validated['keychain_type'])) {
+            $options['keychain_type'] = $validated['keychain_type'];
+        }
 
         $note = $validated['note'] ?? null;
         if ($product->name === 'Undangan') {
@@ -116,7 +129,19 @@ class CartController extends Controller
         }
 
         $documentFilePath = null;
-        if ($product->name === 'Polaroid & Photostrip') {
+        if ($product->name === 'Gantungan Kunci Photostrip') {
+            $uploadedPhotos = [];
+            if ($request->hasFile('keychain_files')) {
+                foreach ($request->file('keychain_files') as $file) {
+                    if ($file) {
+                        $uploadedPhotos[] = $this->storePublicUpload($file, 'uploads/document_files');
+                    }
+                }
+            }
+            if (!empty($uploadedPhotos)) {
+                $options['uploaded_photos'] = $uploadedPhotos;
+            }
+        } elseif ($product->name === 'Polaroid & Photostrip') {
             $uploadedPhotos = [];
             if (isset($validated['variant']) && $validated['variant'] === 'Photostrip') {
                 if ($request->hasFile('photostrip_files')) {

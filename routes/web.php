@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\TemplateController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -31,7 +32,7 @@ Route::post('/checkout/{checkoutId}/upload-bukti', [CheckoutController::class, '
 // 2. HALAMAN DASHBOARD (SETELAH LOGIN)
 // ==========================================
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('orders.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
     // --- MANAJEMEN PESANAN AKTIF ---
     Route::get('admin/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('admin/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::patch('admin/orders/{id}/payment-validation', [OrderController::class, 'togglePaymentValidation'])->name('orders.togglePaymentValidation');
     Route::patch('admin/orders/checkout/{checkoutId}/status', [OrderController::class, 'updateStatusByCheckout'])->name('orders.updateStatusByCheckout');
 
     // --- MANAJEMEN RIWAYAT TRANSAKSI & DOWNLOAD LAPORAN ---
@@ -56,6 +58,11 @@ Route::middleware('auth')->group(function () {
 
     // --- CRUD PRODUK CETAKAN ---
     Route::resource('admin/products', ProductController::class);
+
+    // --- MANAJEMEN TEMPLATE ---
+    Route::get('admin/templates', [TemplateController::class, 'index'])->name('templates.index');
+    Route::post('admin/templates/upload', [TemplateController::class, 'upload'])->name('templates.upload');
+    Route::post('admin/templates/delete', [TemplateController::class, 'delete'])->name('templates.delete');
 });
 
 require __DIR__ . '/auth.php';

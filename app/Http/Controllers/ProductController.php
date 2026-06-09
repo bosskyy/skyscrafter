@@ -34,9 +34,17 @@ class ProductController extends Controller
 
         $data = $request->all();
 
-        // Logika simpan file ke storage
+        // Simpan file ke public/images directory
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $imagesPath = public_path('images');
+            if (!\Illuminate\Support\Facades\File::exists($imagesPath)) {
+                \Illuminate\Support\Facades\File::makeDirectory($imagesPath, 0755, true);
+            }
+            
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move($imagesPath, $filename);
+            $data['image'] = $filename;
         }
 
         \App\Models\Product::create($data);
@@ -76,11 +84,22 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             // Hapus foto lama jika ada
             if ($product->image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+                $oldImagePath = public_path('images/' . $product->image);
+                if (\Illuminate\Support\Facades\File::exists($oldImagePath)) {
+                    \Illuminate\Support\Facades\File::delete($oldImagePath);
+                }
             }
 
-            // Simpan foto baru
-            $data['image'] = $request->file('image')->store('products', 'public');
+            // Simpan foto baru ke public/images directory
+            $imagesPath = public_path('images');
+            if (!\Illuminate\Support\Facades\File::exists($imagesPath)) {
+                \Illuminate\Support\Facades\File::makeDirectory($imagesPath, 0755, true);
+            }
+            
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move($imagesPath, $filename);
+            $data['image'] = $filename;
         }
 
         $product->update($data);

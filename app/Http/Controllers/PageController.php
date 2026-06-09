@@ -31,8 +31,20 @@ class PageController extends Controller
             }
         }
 
+        // Ambil list template gantungan kunci (keychain)
+        $keychain_templates = [];
+        $keychainTemplatePath = public_path('templates/keychain');
+        if (\Illuminate\Support\Facades\File::exists($keychainTemplatePath)) {
+            $files = \Illuminate\Support\Facades\File::files($keychainTemplatePath);
+            foreach ($files as $file) {
+                if (in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $keychain_templates[] = 'templates/keychain/' . $file->getFilename();
+                }
+            }
+        }
+
         // Kirim data ke view 'layanan.blade.php'
-        return view('layanan', compact('products', 'templates'));
+        return view('layanan', compact('products', 'templates', 'keychain_templates'));
     }
 
     // Method untuk halaman Kontak

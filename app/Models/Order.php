@@ -23,7 +23,8 @@ class Order extends Model
         'document_file',
         'options',
         'status',
-        'payment_proof'
+        'payment_proof',
+        'payment_validated'
     ];
 
     protected $casts = [

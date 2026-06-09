@@ -24,6 +24,7 @@ class ProductSeeder extends Seeder
             ['name' => 'Laminating', 'price' => 3000, 'desc' => 'Perlindungan dokumen dengan plastik laminating panas.', 'image' => 'laminating.png'],
             ['name' => 'Undangan', 'price' => 2000, 'desc' => 'Cetak undangan pernikahan atau acara lainnya.', 'image' => 'undangan.png'],
             ['name' => 'Polaroid & Photostrip', 'price' => 1500, 'desc' => 'Cetak foto ala polaroid atau photostrip kekinian.', 'image' => 'polaroid photostrip.png'],
+            ['name' => 'Gantungan Kunci Photostrip', 'price' => 15000, 'desc' => 'Gantungan kunci dengan desain photostrip custom. Upload 3 atau 6 foto sesuai desain pilihan Anda.', 'image' => 'gantungan-kunci.png'],
         ];
 
         foreach ($products as $item) {
