@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Storage;
 class ImageHelper
 {
     /**
-     * Get image URL with fallback support
-     * Works even if storage symlink is not created yet
+     * Get image URL with multiple fallback locations
+     * Priority: public/images → storage → default
      */
     public static function url(?string $imagePath, ?string $default = null): string
     {
@@ -17,43 +17,60 @@ class ImageHelper
             return $default ? asset($default) : asset('images/logo_sky.png');
         }
 
-        // Check if using new storage path format (contains 'products/')
-        if (strpos($imagePath, 'products/') !== false || strpos($imagePath, 'storage/') === false) {
-            // Try storage URL first
+        // PRIORITY 1: Check public/images (for static images like logo, layanan, etc)
+        $publicPath = public_path('images/' . $imagePath);
+        if (File::exists($publicPath)) {
+            return asset('images/' . $imagePath);
+        }
+
+        // PRIORITY 2: Check if using storage path format (products/xxx or storage/products/xxx)
+        if (strpos($imagePath, 'products/') !== false) {
+            // If it's a full storage path, try to serve it
             if (Storage::disk('public')->exists($imagePath)) {
                 return asset('storage/' . $imagePath);
             }
-
-            // Fallback: try direct access if symlink not ready
-            $storagePath = storage_path('app/public/' . $imagePath);
-            if (File::exists($storagePath)) {
-                // Try to serve directly from storage if symlink failed
-                return url('api/images/' . base64_encode($imagePath));
-            }
         }
 
-        // If old format (just filename), check both locations
-        $pathsToTry = [
-            public_path('images/' . $imagePath),
-            storage_path('app/public/products/' . $imagePath),
-        ];
-
-        foreach ($pathsToTry as $path) {
-            if (File::exists($path)) {
-                if (strpos($path, 'storage') !== false) {
-                    return asset('storage/products/' . $imagePath);
-                } else {
-                    return asset('images/' . $imagePath);
-                }
-            }
+        // PRIORITY 3: Try storage direct (if just filename)
+        if (Storage::disk('public')->exists('products/' . $imagePath)) {
+            return asset('storage/products/' . $imagePath);
         }
 
-        // Return default or placeholder
+        // PRIORITY 4: Try storage path direct
+        $storagePath = storage_path('app/public/' . $imagePath);
+        if (File::exists($storagePath)) {
+            return asset('storage/' . $imagePath);
+        }
+
+        // PRIORITY 5: Fallback to API route (if symlink failed)
+        if ($imagePath) {
+            return url('api/images/' . base64_encode($imagePath));
+        }
+
+        // Final default
         return $default ? asset($default) : asset('images/logo_sky.png');
     }
 
     /**
-     * Check if image exists in storage
+     * Get simple image URL from public/images
+     * Use this for static images (logo, etc)
+     */
+    public static function publicImage(?string $filename, ?string $default = null): string
+    {
+        if (!$filename) {
+            return $default ? asset($default) : asset('images/logo_sky.png');
+        }
+
+        $path = public_path('images/' . $filename);
+        if (File::exists($path)) {
+            return asset('images/' . $filename);
+        }
+
+        return $default ? asset($default) : asset('images/logo_sky.png');
+    }
+
+    /**
+     * Check if image exists in any location
      */
     public static function exists(?string $imagePath): bool
     {
@@ -61,8 +78,9 @@ class ImageHelper
             return false;
         }
 
-        return Storage::disk('public')->exists($imagePath) ||
-               File::exists(public_path('images/' . $imagePath));
+        return File::exists(public_path('images/' . $imagePath)) ||
+               Storage::disk('public')->exists($imagePath) ||
+               File::exists(storage_path('app/public/' . $imagePath));
     }
 
     /**
@@ -80,6 +98,9 @@ class ImageHelper
             'target_path' => $target,
             'is_readable' => is_readable($target),
             'php_os' => PHP_OS,
+            'public_images_dir' => public_path('images'),
+            'public_images_readable' => is_readable(public_path('images')),
         ];
     }
 }
+

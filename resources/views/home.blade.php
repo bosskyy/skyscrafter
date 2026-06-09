@@ -63,7 +63,7 @@
             @foreach($products->take(4) as $p)
             <div class="col-sm-6">
                 <div class="card h-100 border rounded-4 overflow-hidden hover-up bg-light bg-opacity-50">
-                    <img src="{{ imageUrl($p->image) }}" 
+                    <img src="@if($p->image){{ asset('images/' . $p->image) }}@else{{ asset('images/logo_sky.png') }}@endif" 
                          class="card-img-top border-bottom" style="height: 140px; object-fit: cover;">
                     <div class="card-body p-3 text-center">
                         <h6 class="fw-bold mb-1 text-truncate text-dark">{{ $p->name }}</h6>
