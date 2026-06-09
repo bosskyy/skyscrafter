@@ -66,6 +66,7 @@
                 
                 @auth
                     <a class="nav-link" href="/admin/products"><i class="bi bi-box-seam me-1"></i> Produk</a>
+                    <a class="nav-link" href="/admin/templates"><i class="bi bi-image me-1"></i> Template</a>
                     <a class="nav-link fw-bold px-3 mx-lg-2 rounded bg-danger text-white shadow-sm" href="/admin/orders">
                         <i class="bi bi-clipboard2-check me-1"></i> Daftar Pesanan
                     </a>
