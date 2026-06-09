@@ -24,7 +24,7 @@
                         <label class="form-label fw-bold">Foto Produk Saat Ini</label>
                         <div class="mb-2">
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" width="150" class="img-thumbnail shadow-sm">
+                                <img src="{{ asset('images/' . rawurlencode($product->image)) }}" width="150" class="img-thumbnail shadow-sm">
                             @else
                                 <span class="text-muted italic">Tidak ada foto sebelumnya</span>
                             @endif

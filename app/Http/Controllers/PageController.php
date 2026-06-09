@@ -19,8 +19,20 @@ class PageController extends Controller
     {
         $products = Product::all();
 
+        // Ambil list template photostrip
+        $templates = [];
+        $templatePath = public_path('templates');
+        if (\Illuminate\Support\Facades\File::exists($templatePath)) {
+            $files = \Illuminate\Support\Facades\File::files($templatePath);
+            foreach ($files as $file) {
+                if (in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $templates[] = 'templates/' . $file->getFilename();
+                }
+            }
+        }
+
         // Kirim data ke view 'layanan.blade.php'
-        return view('layanan', compact('products'));
+        return view('layanan', compact('products', 'templates'));
     }
 
     // Method untuk halaman Kontak

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PageController; 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -12,6 +14,17 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/layanan', [PageController::class, 'layanan']);
 Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
+
+Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
+Route::post('/keranjang/tambah', [CartController::class, 'add'])->name('cart.add');
+Route::post('/keranjang/{lineId}/hapus', [CartController::class, 'remove'])->name('cart.remove');
+
+Route::post('/checkout/start', [CheckoutController::class, 'start'])->name('checkout.start');
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout/{checkoutId}/pembayaran', [CheckoutController::class, 'payment'])->name('checkout.payment');
+Route::get('/checkout/{checkoutId}/upload-bukti', [CheckoutController::class, 'paymentProofForm'])->name('checkout.paymentProofForm');
+Route::post('/checkout/{checkoutId}/upload-bukti', [CheckoutController::class, 'uploadPaymentProof'])->name('checkout.uploadPaymentProof');
 
 
 // ==========================================
@@ -35,6 +48,7 @@ Route::middleware('auth')->group(function () {
     // --- MANAJEMEN PESANAN AKTIF ---
     Route::get('admin/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('admin/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::patch('admin/orders/checkout/{checkoutId}/status', [OrderController::class, 'updateStatusByCheckout'])->name('orders.updateStatusByCheckout');
 
     // --- MANAJEMEN RIWAYAT TRANSAKSI & DOWNLOAD LAPORAN ---
     Route::get('admin/transactions/history', [OrderController::class, 'transactionHistory'])->name('transactions.history');

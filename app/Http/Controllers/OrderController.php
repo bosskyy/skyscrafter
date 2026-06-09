@@ -36,6 +36,13 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Pesanan berhasil dikirim! File Anda telah kami terima.');
     }
 
+    // Mengubah status pesanan menjadi Selesai (semua item di dalam satu checkout)
+    public function updateStatusByCheckout($checkoutId)
+    {
+        Order::where('checkout_id', $checkoutId)->update(['status' => 'Selesai']);
+        return redirect()->back()->with('success', 'Transaksi berhasil diselesaikan!');
+    }
+
     // Mengubah status pesanan menjadi Selesai
     public function updateStatus($id)
     {
@@ -46,15 +53,30 @@ class OrderController extends Controller
     }
 
     // Menampilkan Pesanan Masuk (Hanya yang statusnya BUKAN Selesai / Pending)
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil pesanan yang belum selesai agar halaman utama admin tetap bersih
-        $orders = Order::with('product')
-            ->where('status', '!=', 'Selesai')
-            ->latest()
-            ->get();
+        $sort = $request->query('sort', 'waktu_baru');
 
-        return view('admin.orders.index', compact('orders'));
+        // Mengambil pesanan yang belum selesai agar halaman utama admin tetap bersih
+        // Lalu dikelompokkan berdasarkan checkout_id, jika null maka gunakan ID pesanan sendiri.
+        $query = Order::with('product')
+            ->where('status', '!=', 'Selesai')
+            ->get()
+            ->groupBy(function ($order) {
+                return $order->checkout_id ?: 'LEGACY-' . $order->id;
+            });
+
+        if ($sort === 'waktu_lama') {
+            $orders = $query->sortBy(fn($group) => $group->first()->created_at);
+        } elseif ($sort === 'kustom_nama') {
+            $orders = $query->sortBy(fn($group) => $group->first()->customer_name);
+        } elseif ($sort === 'produk') {
+            $orders = $query->sortBy(fn($group) => $group->first()->product->name ?? '');
+        } else {
+            $orders = $query->sortByDesc(fn($group) => $group->first()->created_at);
+        }
+
+        return view('admin.orders.index', compact('orders', 'sort'));
     }
 
     // ==========================================
@@ -62,23 +84,40 @@ class OrderController extends Controller
     // ==========================================
 
     // 1. Menampilkan halaman riwayat khusus pesanan "Selesai"
-    public function transactionHistory()
+    public function transactionHistory(Request $request)
     {
-        $completedOrders = Order::with('product')
-            ->where('status', 'Selesai')
-            ->latest()
-            ->get();
+        $sort = $request->query('sort', 'waktu_baru');
 
-        return view('admin.orders.history', compact('completedOrders'));
+        $query = Order::with('product')
+            ->where('status', 'Selesai')
+            ->get()
+            ->groupBy(function ($order) {
+                return $order->checkout_id ?: 'LEGACY-' . $order->id;
+            });
+
+        if ($sort === 'waktu_lama') {
+            $completedOrders = $query->sortBy(fn($group) => $group->first()->updated_at);
+        } elseif ($sort === 'kustom_nama') {
+            $completedOrders = $query->sortBy(fn($group) => $group->first()->customer_name);
+        } elseif ($sort === 'produk') {
+            $completedOrders = $query->sortBy(fn($group) => $group->first()->product->name ?? '');
+        } else {
+            $completedOrders = $query->sortByDesc(fn($group) => $group->first()->updated_at);
+        }
+
+        return view('admin.orders.history', compact('completedOrders', 'sort'));
     }
 
     // 2. Mengunduh data riwayat transaksi menjadi file CSV (Bisa langsung dibuka di Excel)
     public function exportTransactions()
     {
-        $completedOrders = Order::with('product')
+        $completedGroupedOrders = Order::with('product')
             ->where('status', 'Selesai')
-            ->latest()
-            ->get();
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->groupBy(function ($order) {
+                return $order->checkout_id ?: 'LEGACY-' . $order->id;
+            });
 
         $fileName = 'Riwayat_Transaksi_Skycrafter_' . date('Y-m-d') . '.csv';
 
@@ -90,9 +129,9 @@ class OrderController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Tanggal Selesai', 'Nama Pelanggan', 'Produk', 'Jumlah', 'WhatsApp', 'Total Harga'];
+        $columns = ['Transaksi', 'Waktu', 'Nama Pelanggan', 'WhatsApp', 'Pengantaran', 'Total Harga', 'Detail Pesanan'];
 
-        $callback = function() use($completedOrders, $columns) {
+        $callback = function() use($completedGroupedOrders, $columns) {
             $file = fopen('php://output', 'w');
             
             // Menambahkan BOM (Byte Order Mark) agar Excel membaca tanda koma dan huruf dengan benar
@@ -102,16 +141,29 @@ class OrderController extends Controller
             fputcsv($file, $columns);
 
             // Tulis baris data transaksi
-            foreach ($completedOrders as $order) {
-                $totalHarga = $order->quantity * $order->product->price;
+            foreach ($completedGroupedOrders as $checkoutId => $group) {
+                $first = $group->first();
+                $totalHarga = $group->sum(fn($o) => $o->totalPrice());
+                
+                $detailItems = [];
+                foreach($group as $o) {
+                    $itemText = $o->quantity . 'x ' . $o->product->name;
+                    if ($o->optionsSummary()) {
+                        $itemText .= ' (' . $o->optionsSummary() . ')';
+                    }
+                    $detailItems[] = $itemText;
+                }
+                
+                $trxCode = str_starts_with($checkoutId, 'LEGACY-') ? $checkoutId : 'TRX-' . strtoupper(substr($checkoutId, 0, 8));
 
                 fputcsv($file, [
-                    $order->updated_at->format('d M Y H:i'),
-                    $order->customer_name,
-                    $order->product->name,
-                    $order->quantity . ' pcs',
-                    $order->customer_whatsapp,
-                    'Rp ' . number_format($totalHarga, 0, ',', '.')
+                    $trxCode,
+                    $first->updated_at->format('d M Y H:i'),
+                    $first->customer_name,
+                    $first->customer_whatsapp,
+                    $first->delivery_method === 'diantar' ? "Diantar ({$first->delivery_address})" : 'Diambil',
+                    'Rp ' . number_format($totalHarga, 0, ',', '.'),
+                    implode(', ', $detailItems)
                 ]);
             }
 
